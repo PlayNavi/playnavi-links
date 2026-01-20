@@ -3,7 +3,7 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "com.playnavilab.playnavi",
+      "package_name": "com.playnavilab.playnavi.app",
       "sha256_cert_fingerprints": [
         "F8:F3:B2:DA:0D:52:AD:98:7D:4E:71:59:B3:49:BE:6D:82:35:2A:23"
       ]
