@@ -1,0 +1,8 @@
+# Vercel
+.vercel
+.env*.local
+node_modules/
+
+# Phase 2.5: bridge が作る中間ファイル
+.bridge-tasks/
+.bridge-attachments/
