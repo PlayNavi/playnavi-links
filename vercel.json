@@ -15,6 +15,10 @@
   ],
   "rewrites": [
     {
+      "source": "/auth/steam/callback",
+      "destination": "https://irbtguncoatqfikctreq.supabase.co/functions/v1/steam-signin"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
