@@ -236,7 +236,15 @@
                     description: document.getElementById("description")
                 };
 
-                if (elements.manualBtn) elements.manualBtn.href = schemeUrl;
+                if (elements.manualBtn) {
+                    elements.manualBtn.href = schemeUrl;
+                    elements.manualBtn.addEventListener("click", function (event) {
+                        // Xなどのアプリ内ブラウザは、load直後のcustom scheme起動を
+                        // 抑止することがある。実タップのgesture内で改めて起動する。
+                        event.preventDefault();
+                        window.location.assign(schemeUrl);
+                    });
+                }
 
                 if (!storeUrl) {
                     // PC など: 自動遷移は抑止し、両ストアの導線を提示
@@ -262,12 +270,11 @@
 
                 setTimeout(function () {
                     if (appLaunched) return;
-                    if (elements.heading) elements.heading.textContent = "アプリが見つかりません";
+                    if (elements.heading) elements.heading.textContent = "PlayNaviでログを開く";
                     if (elements.description) {
-                        elements.description.innerHTML = "アプリが起動しない場合は、ストアからインストールしてください。";
+                        elements.description.innerHTML = "「アプリで開く」をタップしてください。<br>起動しない場合は、ストアからインストールできます。";
                     }
                     showFallbackButtons(elements, platform);
-                    window.location.href = storeUrl;
                 }, LAUNCH_TIMEOUT_MS);
             });
         })();
