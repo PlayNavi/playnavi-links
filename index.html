@@ -188,6 +188,7 @@
         (function () {
             var APP_STORE_URL = "https://apps.apple.com/jp/app/playnavi/id6756201875";
             var PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.playnavilab.playnavi.app";
+            var IOS_OPEN_APP_ORIGIN = "https://playnavi-links.vercel.app";
             var LAUNCH_TIMEOUT_MS = 2000;
 
             function detectPlatform(ua) {
@@ -221,6 +222,7 @@
                 var schemeUrl = "playnavi:/" + path + query;
 
                 var platform = detectPlatform(navigator.userAgent || "");
+                var isIosOpenAppOrigin = window.location.origin === IOS_OPEN_APP_ORIGIN;
                 var storeUrl = platform === "ios" ? APP_STORE_URL
                              : platform === "android" ? PLAY_STORE_URL
                              : null;
@@ -237,13 +239,14 @@
                 };
 
                 if (elements.manualBtn) {
-                    elements.manualBtn.href = schemeUrl;
-                    elements.manualBtn.addEventListener("click", function (event) {
-                        // Xなどのアプリ内ブラウザは、load直後のcustom scheme起動を
-                        // 抑止することがある。実タップのgesture内で改めて起動する。
-                        event.preventDefault();
-                        window.location.assign(schemeUrl);
-                    });
+                    // iOS は同一ドメイン上の Universal Link をブラウザ内遷移として扱う。
+                    // links.playnavilab.com から別ドメインの関連済み Universal Link を
+                    // 実タップし、iOS がアプリへ引き渡せる条件を満たす。
+                    // 遷移先サイトでは custom scheme を最後の予備にする。
+                    elements.manualBtn.href =
+                        platform === "ios" && !isIosOpenAppOrigin
+                            ? IOS_OPEN_APP_ORIGIN + path + query
+                            : schemeUrl;
                 }
 
                 if (!storeUrl) {
