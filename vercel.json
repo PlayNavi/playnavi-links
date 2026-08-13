@@ -3,13 +3,33 @@
     {
       "source": "/.well-known/apple-app-site-association",
       "headers": [
-        { "key": "Content-Type", "value": "application/json" }
+        { "key": "Content-Type", "value": "application/json" },
+        { "key": "Cache-Control", "value": "public, max-age=300" }
       ]
     },
     {
       "source": "/.well-known/assetlinks.json",
       "headers": [
-        { "key": "Content-Type", "value": "application/json" }
+        { "key": "Content-Type", "value": "application/json" },
+        { "key": "Cache-Control", "value": "public, max-age=300" }
+      ]
+    },
+    {
+      "source": "/s/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" },
+        { "key": "Referrer-Policy", "value": "no-referrer" },
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" }
+      ]
+    },
+    {
+      "source": "/api/share-links/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" },
+        { "key": "Referrer-Policy", "value": "no-referrer" },
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" }
       ]
     }
   ],
@@ -17,6 +37,14 @@
     {
       "source": "/auth/steam/callback",
       "destination": "https://irbtguncoatqfikctreq.supabase.co/functions/v1/steam-signin"
+    },
+    {
+      "source": "/api/share-links/:code",
+      "destination": "https://irbtguncoatqfikctreq.supabase.co/functions/v1/short-links-resolve?code=:code"
+    },
+    {
+      "source": "/s/:code",
+      "destination": "/index.html"
     },
     {
       "source": "/(.*)",
