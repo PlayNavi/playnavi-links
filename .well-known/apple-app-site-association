@@ -4,7 +4,7 @@
     "details": [
       {
         "appID": "9GSX6744M2.com.playnavilab.playnavi",
-        "paths": [ "/users/*", "/catalogs/*", "/game/*" ]
+        "paths": [ "/s/*", "/users/*", "/catalogs/*", "/game/*" ]
       }
     ]
   }
