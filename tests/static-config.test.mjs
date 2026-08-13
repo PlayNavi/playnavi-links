@@ -4,6 +4,13 @@ import test from "node:test";
 
 const readJson = async (path) => JSON.parse(await readFile(new URL(path, import.meta.url), "utf8"));
 
+test("Android association uses the reviewed Play App Signing certificate", async () => {
+  const assetLinks = await readJson("../.well-known/assetlinks.json");
+  assert.deepEqual(assetLinks[0].target.sha256_cert_fingerprints, [
+    "FA:AD:DE:14:4B:F6:6C:23:C4:4A:4B:65:5D:CD:4A:2F:76:94:38:60:FD:DB:DE:C7:DC:04:1A:82:DF:7B:E4:A7",
+  ]);
+});
+
 test("AASA includes short links without removing canonical routes", async () => {
   const aasa = await readJson("../.well-known/apple-app-site-association");
   assert.deepEqual(aasa.applinks.details[0].paths, [

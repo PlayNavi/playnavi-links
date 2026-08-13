@@ -20,7 +20,6 @@ npm test
 npm run validate:android
 ```
 
-The Android validation intentionally fails on the repository's current
-20-byte certificate fingerprint. Before associating or deploying a new host,
-replace it with the exact 32-byte SHA-256 fingerprint copied from Play App
-Signing, then rerun the validation. Do not derive or guess the fingerprint.
+The Android association uses the exact 32-byte SHA-256 fingerprint copied from
+Play App Signing. Rerun both validation commands after any association-file
+change. Do not derive or guess the fingerprint.
