@@ -11,6 +11,12 @@ const elements = {
   apple: document.getElementById("apple-login"),
   form: document.getElementById("survey-form"),
   questions: document.getElementById("survey-questions"),
+  step: document.getElementById("survey-step"),
+  progressLabel: document.getElementById("survey-progress-label"),
+  progressTrack: document.getElementById("survey-progress-track"),
+  progressBar: document.getElementById("survey-progress-bar"),
+  back: document.getElementById("survey-back"),
+  next: document.getElementById("survey-next"),
   error: document.getElementById("survey-error"),
   submit: document.getElementById("survey-submit"),
   result: document.getElementById("survey-result"),
@@ -24,6 +30,7 @@ const elements = {
 
 const setVisible = (element, visible) => element?.classList.toggle("hidden", !visible);
 const draftKey = (slug) => `pn_survey_draft:${slug}`;
+const QUESTIONS_PER_STEP = 4;
 
 function setPage({ title, description, loading = false }) {
   if (elements.title) elements.title.textContent = title;
@@ -138,67 +145,146 @@ function renderQuestions(slug, survey) {
   elements.questions.replaceChildren();
 
   const updateDraft = () => saveDraft(slug, values);
-  for (const question of survey.questions) {
-    const fieldset = document.createElement("fieldset");
-    fieldset.className = "question";
-    fieldset.dataset.questionId = question.id;
-    const legend = document.createElement("legend");
-    legend.textContent = question.prompt;
-    if (question.required) {
-      const required = document.createElement("span");
-      required.className = "required";
-      required.textContent = "必須";
-      legend.append(required);
-    }
-    fieldset.append(legend);
+  const pages = [];
+  for (let offset = 0; offset < survey.questions.length; offset += QUESTIONS_PER_STEP) {
+    const pageQuestions = survey.questions.slice(offset, offset + QUESTIONS_PER_STEP);
+    const page = document.createElement("section");
+    page.className = "survey-step-page";
+    page.dataset.step = String(pages.length);
+    page.hidden = pages.length !== 0;
+    pages.push({ element: page, questions: pageQuestions });
 
-    if (question.type === "short_text") {
-      const input = document.createElement("textarea");
-      input.maxLength = question.maxLength;
-      input.value = typeof values[question.id] === "string" ? values[question.id] : "";
-      input.addEventListener("input", () => {
-        values[question.id] = input.value;
-        updateDraft();
-      });
-      const hint = document.createElement("p");
-      hint.className = "hint";
-      hint.textContent = `${question.maxLength}文字以内`;
-      fieldset.append(input, hint);
-    } else {
-      for (const option of question.options) {
-        const input = choiceInput(question, option, values[question.id], (event) => {
-          if (question.type === "single_choice") {
-            values[question.id] = event.currentTarget.value;
-          } else {
-            const selected = new Set(Array.isArray(values[question.id]) ? values[question.id] : []);
-            event.currentTarget.checked
-              ? selected.add(event.currentTarget.value)
-              : selected.delete(event.currentTarget.value);
-            values[question.id] = [...selected];
-          }
+    for (const question of pageQuestions) {
+      const fieldset = document.createElement("fieldset");
+      fieldset.className = "question question-card";
+      fieldset.dataset.questionId = question.id;
+      const legend = document.createElement("legend");
+      legend.textContent = question.prompt;
+      if (question.required) {
+        const required = document.createElement("span");
+        required.className = "required";
+        required.textContent = "必須";
+        legend.append(required);
+      }
+      fieldset.append(legend);
+
+      if (question.type === "short_text") {
+        const input = document.createElement("textarea");
+        input.maxLength = question.maxLength;
+        input.value = typeof values[question.id] === "string" ? values[question.id] : "";
+        input.addEventListener("input", () => {
+          values[question.id] = input.value;
           updateDraft();
         });
-        fieldset.append(input);
+        const hint = document.createElement("p");
+        hint.className = "hint";
+        const updateCount = () => {
+          hint.textContent = `${input.value.length} / ${question.maxLength}文字`;
+        };
+        updateCount();
+        input.addEventListener("input", updateCount);
+        fieldset.append(input, hint);
+      } else {
+        for (const option of question.options) {
+          const input = choiceInput(question, option, values[question.id], (event) => {
+            if (question.type === "single_choice") {
+              values[question.id] = event.currentTarget.value;
+            } else {
+              const selected = new Set(Array.isArray(values[question.id]) ? values[question.id] : []);
+              event.currentTarget.checked
+                ? selected.add(event.currentTarget.value)
+                : selected.delete(event.currentTarget.value);
+              values[question.id] = [...selected];
+            }
+            updateDraft();
+          });
+          fieldset.append(input);
+        }
       }
+      page.append(fieldset);
     }
-    elements.questions.append(fieldset);
+    elements.questions.append(page);
   }
-  return values;
+  return { values, pages };
 }
 
-async function submitSurvey(slug, survey, values) {
-  const result = validateAnswers(survey.questions, values);
-  elements.error.textContent = "";
-  setVisible(elements.error, false);
+function missingOnPage(page, values) {
+  return validateAnswers(page.questions, values).missing;
+}
+
+function markMissing(missing) {
   for (const fieldset of elements.questions.querySelectorAll(".question")) {
     fieldset.removeAttribute("aria-invalid");
   }
-  if (result.missing.length > 0) {
-    for (const id of result.missing) {
-      elements.questions.querySelector(`[data-question-id="${CSS.escape(id)}"]`)?.setAttribute("aria-invalid", "true");
+  for (const id of missing) {
+    elements.questions
+      .querySelector(`[data-question-id="${CSS.escape(id)}"]`)
+      ?.setAttribute("aria-invalid", "true");
+  }
+}
+
+function focusQuestion(id) {
+  const fieldset = elements.questions.querySelector(
+    `[data-question-id="${CSS.escape(id)}"]`,
+  );
+  fieldset?.scrollIntoView({ behavior: "smooth", block: "center" });
+  fieldset?.querySelector("input, textarea")?.focus({ preventScroll: true });
+}
+
+function createStepController(pages, values) {
+  let current = 0;
+  const show = (index) => {
+    current = Math.max(0, Math.min(index, pages.length - 1));
+    pages.forEach((page, pageIndex) => {
+      page.element.hidden = pageIndex !== current;
+    });
+    const stepNumber = current + 1;
+    if (elements.step) elements.step.textContent = `${stepNumber} / ${pages.length}`;
+    if (elements.progressLabel) {
+      elements.progressLabel.textContent = current === pages.length - 1
+        ? "最後のステップ"
+        : "回答の進捗";
     }
+    if (elements.progressBar) {
+      elements.progressBar.style.width = `${Math.round((stepNumber / pages.length) * 100)}%`;
+    }
+    elements.progressTrack?.setAttribute("aria-valuemax", String(pages.length));
+    elements.progressTrack?.setAttribute("aria-valuenow", String(stepNumber));
+    setVisible(elements.back, current > 0);
+    setVisible(elements.next, current < pages.length - 1);
+    setVisible(elements.submit, current === pages.length - 1);
+    elements.error.textContent = "";
+    setVisible(elements.error, false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  elements.back.onclick = () => show(current - 1);
+  elements.next.onclick = () => {
+    const missing = missingOnPage(pages[current], values);
+    markMissing(missing);
+    if (missing.length > 0) {
+      elements.error.textContent = "この画面の必須項目に回答してください。";
+      setVisible(elements.error, true);
+      focusQuestion(missing[0]);
+      return;
+    }
+    show(current + 1);
+  };
+  show(0);
+  return { show };
+}
+
+async function submitSurvey(slug, survey, values, stepController) {
+  const result = validateAnswers(survey.questions, values);
+  elements.error.textContent = "";
+  setVisible(elements.error, false);
+  markMissing(result.missing);
+  if (result.missing.length > 0) {
+    const pageIndex = survey.questions.findIndex((question) => question.id === result.missing[0]);
+    stepController.show(Math.floor(pageIndex / QUESTIONS_PER_STEP));
     elements.error.textContent = "必須の質問に回答してください。";
     setVisible(elements.error, true);
+    focusQuestion(result.missing[0]);
     return;
   }
 
@@ -236,10 +322,11 @@ async function submitSurvey(slug, survey, values) {
 function showSurveyForm(slug, survey) {
   hideStates();
   setPage({ title: survey.title, description: survey.description });
-  const values = renderQuestions(slug, survey);
+  const { values, pages } = renderQuestions(slug, survey);
+  const stepController = createStepController(pages, values);
   elements.form.onsubmit = (event) => {
     event.preventDefault();
-    submitSurvey(slug, survey, values);
+    submitSurvey(slug, survey, values, stepController);
   };
   setVisible(elements.form, true);
 }
@@ -317,4 +404,3 @@ export async function startSurvey(slug) {
   }
   return loadSurvey(slug, authFailed);
 }
-

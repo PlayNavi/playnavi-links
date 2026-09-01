@@ -121,6 +121,14 @@ test("handoff fragments are scrubbed before their same-origin POST", async () =>
   assert.doesNotMatch(source, /[?&]handoff=/);
 });
 
+test("survey uses a bounded mobile wizard and keeps handoff ahead of login", async () => {
+  const source = await readFile(new URL("../assets/survey-app.mjs", import.meta.url), "utf8");
+  assert.match(source, /const QUESTIONS_PER_STEP = 4/);
+  assert.match(source, /createStepController/);
+  assert.match(source, /sessionStorage/);
+  assert.ok(source.indexOf("await exchangeHandoff") < source.indexOf("return loadSurvey"));
+});
+
 test("server code never logs sensitive request material or stores Supabase sessions", async () => {
   const files = [
     "../api/_lib/auth.mjs",
@@ -135,4 +143,3 @@ test("server code never logs sensitive request material or stores Supabase sessi
   assert.match(source, /X-PlayNavi-Web-Secret/);
   assert.match(source, /X-PlayNavi-Survey-Session/);
 });
-

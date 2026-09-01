@@ -40,9 +40,22 @@
         </div>
 
         <form id="survey-form" class="survey-form hidden" novalidate>
+          <div class="survey-progress" aria-live="polite">
+            <div class="survey-progress-copy">
+              <span id="survey-step">1 / 1</span>
+              <span id="survey-progress-label">回答の進捗</span>
+            </div>
+            <div id="survey-progress-track" class="survey-progress-track" role="progressbar" aria-label="アンケートの回答進捗" aria-valuemin="1" aria-valuemax="1" aria-valuenow="1">
+              <span id="survey-progress-bar"></span>
+            </div>
+          </div>
           <div id="survey-questions"></div>
           <p id="survey-error" class="error hidden" role="alert"></p>
-          <button id="survey-submit" class="button primary" type="submit">回答を送信</button>
+          <div class="survey-navigation">
+            <button id="survey-back" class="button secondary" type="button">戻る</button>
+            <button id="survey-next" class="button primary" type="button">次へ</button>
+            <button id="survey-submit" class="button primary hidden" type="submit">回答を送信</button>
+          </div>
         </form>
 
         <div id="survey-result" class="result hidden">
