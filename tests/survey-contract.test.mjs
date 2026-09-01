@@ -35,7 +35,6 @@ test("parses the fixed survey-read contract", () => {
   ]);
   assert.equal(survey.questions[2].maxLength, 50);
 });
-
 test("marks a non-null response as already answered", () => {
   const parsed = parseSurveyRead({
     ...surveyPayload,
@@ -98,4 +97,3 @@ test("parses submit status, idempotency, and reward", () => {
     reward: null,
   }).status, "already_answered");
 });
-

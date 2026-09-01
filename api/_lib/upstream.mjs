@@ -24,7 +24,6 @@ export class UpstreamError extends Error {
     this.code = SAFE_ERROR_CODES.has(code) ? code : null;
   }
 }
-
 export async function callSurveyFunction(config, functionName, options = {}) {
   const headers = {
     Accept: "application/json",
@@ -63,4 +62,3 @@ export async function callSurveyFunction(config, functionName, options = {}) {
   }
   return payload;
 }
-

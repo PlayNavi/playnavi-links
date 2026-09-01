@@ -27,7 +27,6 @@ function validAnswers(value) {
     );
   });
 }
-
 export default async function handler(request, response) {
   if (request.method !== "POST") return methodNotAllowed(response, ["POST"]);
   const surveySlug = firstQueryValue(request.query.surveySlug);
@@ -80,4 +79,3 @@ export default async function handler(request, response) {
     return sendJson(response, 503, { status: "unavailable" });
   }
 }
-

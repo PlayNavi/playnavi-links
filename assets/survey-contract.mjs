@@ -6,7 +6,6 @@ export class SurveyContractError extends Error {
     this.name = "SurveyContractError";
   }
 }
-
 function text(value, maxLength) {
   return typeof value === "string" && value.length > 0 && value.length <= maxLength
     ? value
@@ -111,4 +110,3 @@ export function validateAnswers(questions, values) {
   }
   return { answers, missing };
 }
-

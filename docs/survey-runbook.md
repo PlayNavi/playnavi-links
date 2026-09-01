@@ -176,4 +176,3 @@ Do not deploy or advertise the common URL until all of these are true:
   query strings. The standard provider authorization code is unavoidable in a
   redirect-mode callback, but is single-use, short-lived, state/nonce-bound
   (and Google PKCE-bound), immediately removed by `303`, and never app-logged.
-

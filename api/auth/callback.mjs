@@ -18,7 +18,6 @@ function finish(response, path) {
   clearOAuthState(response);
   return response.redirect(303, path);
 }
-
 export default async function handler(request, response) {
   if (request.method !== "GET") return finish(response, "/?auth=failed");
 
@@ -80,4 +79,3 @@ export default async function handler(request, response) {
     return finish(response, `${returnPath}?auth=failed`);
   }
 }
-

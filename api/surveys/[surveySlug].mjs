@@ -29,4 +29,3 @@ export default async function handler(request, response) {
     return sendJson(response, 503, { status: "unavailable" });
   }
 }
-

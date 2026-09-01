@@ -21,7 +21,6 @@ export function setOAuthState(response, value) {
     }),
   );
 }
-
 export function clearOAuthState(response) {
   appendSetCookie(
     response,
@@ -136,4 +135,3 @@ export async function verifyProviderIdentity(provider, providerConfig, idToken, 
   }
   return payload.sub;
 }
-

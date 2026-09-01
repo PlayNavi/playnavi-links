@@ -10,7 +10,6 @@ function required(name) {
   if (!value) throw new Error(`Missing required environment variable: ${name}`);
   return value;
 }
-
 export function getConfig() {
   const supabaseUrl = required("SUPABASE_URL").replace(/\/$/, "");
   const webOrigin = required("PLAYNAVI_WEB_ORIGIN").replace(/\/$/, "");
@@ -57,4 +56,3 @@ export function getSurveyBrokerSecret() {
 export function functionUrl(config, name) {
   return `${config.supabaseUrl}/functions/v1/${encodeURIComponent(config.functions[name])}`;
 }
-

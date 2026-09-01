@@ -10,7 +10,6 @@ export function methodNotAllowed(response, allowed) {
   response.setHeader("Allow", allowed.join(", "));
   return sendJson(response, 405, { status: "method_not_allowed" });
 }
-
 export function sendJson(response, status, payload) {
   for (const [name, value] of Object.entries(PRIVATE_HEADERS)) {
     response.setHeader(name, value);
@@ -81,4 +80,3 @@ export function serializeCookie(name, value, options = {}) {
   parts.push(`SameSite=${options.sameSite || "Lax"}`);
   return parts.join("; ");
 }
-

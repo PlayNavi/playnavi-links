@@ -7,7 +7,6 @@ export function getSurveySession(request) {
   const value = parseCookies(request.headers.cookie || "")[SURVEY_SESSION_COOKIE];
   return typeof value === "string" && /^[A-Za-z0-9_-]{32,512}$/.test(value) ? value : null;
 }
-
 export function setSurveySession(response, token, expiresAt) {
   const expiresMs = Date.parse(expiresAt);
   const remainingSeconds = Number.isFinite(expiresMs)
@@ -29,4 +28,3 @@ export function clearSurveySession(response) {
     serializeCookie(SURVEY_SESSION_COOKIE, "", { path: "/", maxAge: 0 }),
   );
 }
-
