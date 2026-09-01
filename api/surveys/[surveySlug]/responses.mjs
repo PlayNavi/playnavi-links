@@ -11,11 +11,49 @@ import { clearSurveySession, getSurveySession } from "../../_lib/survey-session.
 import { UpstreamError, callSurveyFunction } from "../../_lib/upstream.mjs";
 
 const MAX_ANSWERS = 100;
+const MAX_ANSWER_BYTES = 64 * 1024;
+const VOICE_KEYS = [
+  "usage_frequency",
+  "overall_satisfaction",
+  "feature_priorities",
+  "feature_comments",
+  "category_top",
+  "feature_details",
+  "future_interest",
+  "future_top",
+];
 
-function validAnswers(value) {
+function boundedJson(value, depth = 0, budget = { entries: 0 }) {
+  if (typeof value === "string") return value.length <= 2_000;
+  if (depth >= 4 || !value || typeof value !== "object") return false;
+  if (Array.isArray(value)) {
+    if (value.length > 100 || new Set(value).size !== value.length) return false;
+    return value.every((item) => typeof item === "string" && item.length <= 500);
+  }
+  const entries = Object.entries(value);
+  budget.entries += entries.length;
+  if (entries.length > MAX_ANSWERS || budget.entries > 300) return false;
+  return entries.every(([key, item]) =>
+    /^[A-Za-z0-9_-]{1,100}$/.test(key) && boundedJson(item, depth + 1, budget)
+  );
+}
+
+export function validAnswers(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const entries = Object.entries(value);
   if (entries.length > MAX_ANSWERS) return false;
+  let serialized;
+  try {
+    serialized = JSON.stringify(value);
+  } catch {
+    return false;
+  }
+  if (Buffer.byteLength(serialized, "utf8") > MAX_ANSWER_BYTES) return false;
+  const isVoice = VOICE_KEYS.every((key) => Object.hasOwn(value, key));
+  if (isVoice) {
+    if (entries.length !== VOICE_KEYS.length || entries.some(([key]) => !VOICE_KEYS.includes(key))) return false;
+    return boundedJson(value);
+  }
   return entries.every(([questionId, answer]) => {
     if (!/^[A-Za-z0-9_-]{1,100}$/.test(questionId)) return false;
     if (typeof answer === "string") return answer.length <= 2_000;

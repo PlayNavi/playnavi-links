@@ -92,6 +92,43 @@ POST survey-submit { survey_slug, answers }
 choice/short text and a unique string array for multiple choice. The server
 contract and client parser are covered by `tests/survey-contract.test.mjs`.
 
+### PlayNavi Voice schema v2
+
+The campaign definition uses `survey.schema_version = 2` and
+`questions.kind = "playnavi_voice_2026"`. The Web client accepts only the
+bounded contract shared with `survey-read` / `survey-submit`: exactly seven
+categories, 26 unique features, seven future candidates, 200-character
+comments, an optional second category, and a maximum future Top 3. Unknown
+definition keys fail closed. Schema v1 remains available for existing generic
+surveys.
+
+The answer object has exactly these keys:
+
+```text
+usage_frequency
+overall_satisfaction
+feature_priorities  (all 26 feature IDs)
+feature_comments    (optional subset; reused by the detail step)
+category_top        (required first, optional second; unique)
+feature_details     (exact features in the selected one or two categories)
+future_interest     (yes / none / unsure)
+future_top          (yes: required first and optional second/third; otherwise empty)
+```
+
+The browser proxy accepts the nested v2 object but retains a 64 KiB serialized
+body boundary. Campaign-specific keys, counts, option membership, selected
+category/detail equality, rank uniqueness, and comment length are revalidated
+by `survey-submit`; the browser validator is a convenience and not a trust
+boundary.
+
+The mobile flow is intro, basic questions, seven category pages, category
+Top 1/optional Top 2, one page per selected category (maximum eight detailed
+features), future-interest/ranking, and review. It avoids matrices and
+drag-only ranking. Progress and bottom navigation remain visible, controls are
+at least 48px high, optional comments are collapsed, drafts stay in
+`sessionStorage`, the first invalid control receives focus, and reduced-motion
+preferences disable step transitions.
+
 ## External authentication setup
 
 1. Register exact callback `https://links.playnavilab.com/api/auth/callback`
