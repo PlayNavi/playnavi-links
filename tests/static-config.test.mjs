@@ -28,12 +28,28 @@ test("specific proxy and Steam routes stay ahead of the static catch-all", async
     "/auth/steam/callback",
     "/api/share-links/:code",
     "/s/:code",
+    "/surveys/:surveySlug",
     "/(.*)",
   ]);
   assert.equal(
     config.rewrites[1].destination,
     "https://irbtguncoatqfikctreq.supabase.co/functions/v1/short-links-resolve?code=:code",
   );
+});
+
+test("survey pages receive strict privacy and script policies", async () => {
+  const config = await readJson("../vercel.json");
+  const surveyHeaders = Object.fromEntries(
+    config.headers.find((entry) => entry.source === "/surveys/(.*)").headers
+      .map(({ key, value }) => [key, value]),
+  );
+  assert.equal(surveyHeaders["Cache-Control"], "no-store");
+  assert.equal(surveyHeaders["Referrer-Policy"], "no-referrer");
+  assert.match(surveyHeaders["Content-Security-Policy"], /script-src 'self'/);
+  assert.doesNotMatch(surveyHeaders["Content-Security-Policy"], /unsafe-inline|https?:/);
+
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  assert.doesNotMatch(html, /<style|<script(?![^>]*\bsrc=)/);
 });
 
 test("short-link documents and proxy responses are not cached or indexed", async () => {

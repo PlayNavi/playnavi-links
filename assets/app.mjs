@@ -4,6 +4,7 @@ import {
   resolveShortLink,
   shortCodeFromPath,
 } from "./link-routing.mjs";
+import { startSurvey } from "./survey-app.mjs";
 
 const APP_STORE_URL = "https://apps.apple.com/jp/app/playnavi/id6756201875";
 const PLAY_STORE_URL =
@@ -180,6 +181,11 @@ async function openShortLink(code) {
 
 function start() {
   const path = window.location.pathname;
+  const surveyMatch = /^\/surveys\/([a-z0-9][a-z0-9-]{0,62})$/.exec(path);
+  if (surveyMatch) {
+    startSurvey(surveyMatch[1]);
+    return;
+  }
   if (path === "/" || path === "") {
     showHome();
     return;

@@ -1,0 +1,119 @@
+:root {
+  --primary: #3db2c5;
+  --primary-dark: #2797aa;
+  --text: #25313a;
+  --muted: #66737d;
+  --border: #dfe9ec;
+  --danger: #bd3e45;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  color: var(--text);
+  background: #f4f8fa;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+main { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 20px; }
+.card {
+  width: min(100%, 420px);
+  padding: 40px 28px;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 12px 36px rgba(27, 76, 88, .10);
+  text-align: center;
+}
+.survey-card { width: min(100%, 680px); text-align: left; }
+.logo { display: block; width: 180px; max-width: 75%; height: auto; margin: 0 auto 30px; }
+.survey-logo { width: 142px; margin-bottom: 24px; }
+h1 { margin: 0 0 12px; font-size: 21px; line-height: 1.45; text-align: center; }
+h2 { margin: 12px 0; font-size: 20px; text-align: center; }
+p { margin: 0 0 24px; color: var(--muted); font-size: 14px; line-height: 1.7; }
+#link-view > p, #survey-description { min-height: 3.4em; text-align: center; }
+.spinner {
+  width: 34px;
+  height: 34px;
+  margin: 0 auto 20px;
+  border: 4px solid #dce9ec;
+  border-left-color: var(--primary);
+  border-radius: 50%;
+  animation: spin .9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.actions { display: grid; gap: 12px; }
+.button {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+.button:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: 3px solid rgba(61, 178, 197, .35);
+  outline-offset: 2px;
+}
+.button:disabled { cursor: wait; opacity: .65; }
+.primary {
+  color: #fff;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  box-shadow: 0 4px 12px rgba(61, 178, 197, .28);
+}
+.secondary { color: var(--primary-dark); background: #eaf7f9; }
+.oauth { border: 1px solid #cad4d8; background: #fff; color: var(--text); }
+.oauth.apple { color: #fff; background: #101214; border-color: #101214; }
+.stores { display: grid; gap: 10px; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e7ecef; }
+.store { color: #fff; background: #101214; border-radius: 12px; }
+.notice { margin-bottom: 16px; text-align: center; }
+.survey-form { display: grid; gap: 28px; }
+.question { margin: 0; padding: 0 0 24px; border: 0; border-bottom: 1px solid var(--border); }
+.question:last-child { border-bottom: 0; }
+.question legend { width: 100%; margin-bottom: 14px; font-size: 16px; font-weight: 700; line-height: 1.6; }
+.required { margin-left: 8px; color: var(--danger); font-size: 12px; }
+.choice { display: flex; gap: 10px; align-items: flex-start; margin: 10px 0; line-height: 1.55; }
+.choice input { flex: 0 0 auto; width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--primary-dark); }
+textarea {
+  width: 100%;
+  min-height: 110px;
+  resize: vertical;
+  padding: 12px;
+  border: 1px solid #bdcbd0;
+  border-radius: 10px;
+  color: var(--text);
+  font: inherit;
+  line-height: 1.6;
+}
+.hint { margin: 6px 0 0; font-size: 12px; text-align: right; }
+.error { margin: 0; color: var(--danger); font-weight: 700; text-align: center; }
+.result { text-align: center; }
+.result-icon {
+  display: grid;
+  width: 56px;
+  height: 56px;
+  place-items: center;
+  margin: 4px auto 12px;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--primary);
+  font-size: 30px;
+  font-weight: 700;
+}
+.reward { margin-top: 24px; padding: 20px; border-radius: 16px; background: #eaf7f9; text-align: center; }
+.reward-label { display: block; margin-bottom: 8px; color: var(--muted); font-size: 12px; }
+.reward strong { color: var(--primary-dark); font-size: 20px; }
+.hidden { display: none !important; }
+
+@media (max-width: 520px) {
+  main { padding: 0; align-items: stretch; }
+  .card { width: 100%; min-height: 100vh; min-height: 100dvh; border-radius: 0; padding: 32px 20px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 1.8s; }
+}
+
