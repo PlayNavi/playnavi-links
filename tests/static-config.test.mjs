@@ -74,3 +74,30 @@ test("user copy avoids version labels and store navigation remains explicit", as
   );
   assert.doesNotMatch(app, /window\.location\.(?:href|replace)\s*=.*(?:APP_STORE|PLAY_STORE)/);
 });
+
+test("survey code loads only on survey routes and login copy matches stored-data behavior", async () => {
+  const app = await readFile(new URL("../assets/app.mjs", import.meta.url), "utf8");
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+
+  assert.doesNotMatch(app, /import\s*\{\s*startSurvey\s*\}\s*from/);
+  assert.match(app, /const \{ startSurvey \} = await import\("\.\/survey-app\.mjs"\)/);
+  assert.match(
+    app,
+    /if \(surveyMatch\) \{\s*void startSurveyRoute\(surveyMatch\[1\]\);\s*return;/,
+  );
+  assert.match(app, /showSurveyBootstrapFailure/);
+
+  assert.match(
+    html,
+    /アカウントに紐づく報酬をご提供するため、ログインをお願いします。/,
+  );
+  assert.match(
+    html,
+    /回答内容は他のユーザーには公開されず、個人が分からない形で集計・利用します。/,
+  );
+  assert.match(
+    html,
+    /報酬付与と重複回答防止のため、保存時はPlayNaviアカウントに紐づきます。/,
+  );
+  assert.doesNotMatch(html, /アンケート内容は匿名での回答になります。/);
+});

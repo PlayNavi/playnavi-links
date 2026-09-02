@@ -16,6 +16,12 @@ final SPA catch-all rewrite.
 | Login | App already uses Google/Apple provider identities | Web verifies provider tokens directly, then exact-matches the provider subject without invoking Supabase signup | source invariant test + pre-production login matrix |
 | Survey UI | Existing static no-build UI | Declarative questions and draft persistence are added | `tests/survey-contract.test.mjs` |
 
+`assets/app.mjs` loads `survey-app.mjs` dynamically only after matching
+`/surveys/<slug>`. A missing or invalid Survey module therefore shows a
+Survey-specific retry state without preventing `/`, `/s/*`, game, user or
+catalog links from starting. `tests/app-entrypoint.test.mjs` executes the entry
+point with the Survey module intentionally absent and proves both boundaries.
+
 History checks used for this design:
 
 - `git log -S'api/share-links' -- .` identifies `d0c6d88`, the successful
@@ -129,6 +135,13 @@ at least 48px high, optional comments are collapsed, drafts stay in
 `sessionStorage`, the first invalid control receives focus, and reduced-motion
 preferences disable step transitions.
 
+The login notice must match the storage contract. Answers are directly linked
+to a PlayNavi user ID so reward grant and one-response enforcement can commit
+atomically. They are not shown to other users, and the reporting API returns
+aggregates without user IDs, comments or raw answers. Do not describe the raw
+stored response as anonymous; disclose the account-linked storage while saying
+that results are aggregated.
+
 ## External authentication setup
 
 1. Register exact callback `https://links.playnavilab.com/api/auth/callback`
@@ -167,10 +180,10 @@ available. Do not use a production handoff code in Preview.
 
 Test all of the following before production promotion:
 
-1. OTA Google user and OTA Apple user: fragment disappears before any request;
+1. Handoff-capable 4.2.2 Google user and Apple user: fragment disappears before any request;
    no login prompt; correct existing PlayNavi profile receives one response and
    at most one reward.
-2. Older/non-OTA Google and Apple users: the direct provider callback returns
+2. App versions without handoff support, plus direct-Web Google and Apple users: the direct provider callback returns
    to a clean survey URL and resolves the exact existing provider subject. Test
    with the same provider used in the app. A different provider, Apple relay
    identity, email-only match, or provider account without a PlayNavi profile
