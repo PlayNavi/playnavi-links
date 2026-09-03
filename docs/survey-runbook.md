@@ -54,6 +54,22 @@ Never prefix them with `PUBLIC_` or expose them to browser assets.
 Provider and broker secrets are server-only Vercel variables. Never put them
 in `vercel.json`, browser assets, Preview comments, or source control.
 
+## Recipient-facing deployment protection boundary
+
+The Survey URL opened by an app recipient must not be protected by Vercel
+Authentication. That screen authenticates a Vercel project member; it is not a
+PlayNavi login and must never be shown to a respondent. For a Preview device
+test, either add the exact branch domain as a Deployment Protection Exception
+or disable Vercel Authentication for Preview deployments in this dedicated
+project. Application-layer handoff/session/provider checks remain mandatory.
+
+Do not append a Shareable Link or automation-bypass secret to the app URL.
+Those values are deployment credentials and would be exposed in the client
+handoff. Before giving a build to a tester, an unauthenticated request to the
+exact `/surveys/{slug}` URL must return the PlayNavi page with HTTP 200 and must
+not redirect to `vercel.com/sso-api`. A redirect is a release-stopping staging
+configuration error.
+
 ## Server contract
 
 The app creates a handoff with `survey-handoff-create` and puts only the opaque
