@@ -13,8 +13,24 @@ function required(name) {
 export function getConfig() {
   const supabaseUrl = required("SUPABASE_URL").replace(/\/$/, "");
   const webOrigin = required("PLAYNAVI_WEB_ORIGIN").replace(/\/$/, "");
-  if (!/^https:\/\//.test(supabaseUrl) || !/^https:\/\//.test(webOrigin)) {
-    throw new Error("SUPABASE_URL and PLAYNAVI_WEB_ORIGIN must use https");
+  if (!/^https:\/\//.test(supabaseUrl)) {
+    throw new Error("SUPABASE_URL must use https");
+  }
+  let parsedWebOrigin;
+  try {
+    parsedWebOrigin = new URL(webOrigin);
+  } catch {
+    throw new Error("PLAYNAVI_WEB_ORIGIN must be a PlayNavi-controlled https origin");
+  }
+  if (
+    parsedWebOrigin.protocol !== "https:" ||
+    parsedWebOrigin.origin !== webOrigin ||
+    parsedWebOrigin.username ||
+    parsedWebOrigin.password ||
+    parsedWebOrigin.port ||
+    !parsedWebOrigin.hostname.endsWith(".playnavilab.com")
+  ) {
+    throw new Error("PLAYNAVI_WEB_ORIGIN must be a PlayNavi-controlled https origin");
   }
   return {
     supabaseUrl,
