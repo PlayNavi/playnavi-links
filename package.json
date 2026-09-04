@@ -1,8 +1,12 @@
 {
   "private": true,
   "type": "module",
+  "engines": { "node": ">=20" },
   "scripts": {
     "test": "node --test tests/*.test.mjs",
     "validate:android": "node scripts/validate-android-fingerprint.mjs"
+  },
+  "dependencies": {
+    "jose": "^6.1.3"
   }
 }

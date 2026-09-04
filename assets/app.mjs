@@ -178,8 +178,46 @@ async function openShortLink(code) {
   }
 }
 
+function showSurveyBootstrapFailure() {
+  setVisible(document.getElementById("link-view"), false);
+  setVisible(document.getElementById("survey-view"), true);
+  for (const id of [
+    "survey-loading",
+    "survey-login",
+    "survey-form",
+    "survey-result",
+  ]) {
+    setVisible(document.getElementById(id), false);
+  }
+  const title = document.getElementById("survey-title");
+  const description = document.getElementById("survey-description");
+  const retry = document.getElementById("survey-retry");
+  if (title) title.textContent = "アンケートを開けません";
+  if (description) {
+    description.textContent =
+      "一時的にアンケートを開けません。通信状況をご確認のうえ、もう一度お試しください。";
+  }
+  if (retry) retry.onclick = () => window.location.reload();
+  setVisible(retry, true);
+}
+
+async function startSurveyRoute(slug) {
+  try {
+    const { startSurvey } = await import("./survey-app.mjs");
+    await startSurvey(slug);
+  } catch {
+    // Surveyの配信物だけが壊れても、通常リンクを担当するapp.mjsは評価済みのまま保つ。
+    showSurveyBootstrapFailure();
+  }
+}
+
 function start() {
   const path = window.location.pathname;
+  const surveyMatch = /^\/surveys\/([a-z0-9][a-z0-9-]{0,62})$/.exec(path);
+  if (surveyMatch) {
+    void startSurveyRoute(surveyMatch[1]);
+    return;
+  }
   if (path === "/" || path === "") {
     showHome();
     return;

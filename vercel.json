@@ -31,19 +31,82 @@
         { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
         { "key": "X-Content-Type-Options", "value": "nosniff" }
       ]
+    },
+    {
+      "source": "/surveys/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" },
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; base-uri 'none'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; img-src 'self' data:; object-src 'none'; script-src 'self'; style-src 'self'" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
+        { "key": "Referrer-Policy", "value": "no-referrer" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "private, no-store, max-age=0" },
+        { "key": "Content-Security-Policy", "value": "default-src 'none'; frame-ancestors 'none'" },
+        { "key": "Referrer-Policy", "value": "no-referrer" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
+      ]
     }
   ],
   "rewrites": [
     {
       "source": "/auth/steam/callback",
+      "has": [
+        { "type": "host", "value": "links.playnavilab.com" }
+      ],
       "destination": "https://irbtguncoatqfikctreq.supabase.co/functions/v1/steam-signin"
     },
     {
+      "source": "/auth/steam/callback",
+      "has": [
+        { "type": "host", "value": "playnavi-links.vercel.app" }
+      ],
+      "destination": "https://irbtguncoatqfikctreq.supabase.co/functions/v1/steam-signin"
+    },
+    {
+      "source": "/auth/steam/callback",
+      "destination": "/api/legacy-route-disabled"
+    },
+    {
       "source": "/api/share-links/:code",
+      "has": [
+        { "type": "host", "value": "links.playnavilab.com" }
+      ],
       "destination": "https://irbtguncoatqfikctreq.supabase.co/functions/v1/short-links-resolve?code=:code"
     },
     {
+      "source": "/api/share-links/:code",
+      "has": [
+        { "type": "host", "value": "playnavi-links.vercel.app" }
+      ],
+      "destination": "https://irbtguncoatqfikctreq.supabase.co/functions/v1/short-links-resolve?code=:code"
+    },
+    {
+      "source": "/api/share-links/:code",
+      "destination": "/api/legacy-route-disabled"
+    },
+    {
+      "source": "/api/surveys/:surveySlug/responses",
+      "destination": "/api/surveys/[surveySlug]/responses"
+    },
+    {
+      "source": "/api/surveys/:surveySlug",
+      "destination": "/api/surveys/[surveySlug]"
+    },
+    {
       "source": "/s/:code",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/surveys/:surveySlug",
       "destination": "/index.html"
     },
     {
