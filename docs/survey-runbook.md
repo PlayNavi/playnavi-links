@@ -44,14 +44,16 @@ Never prefix them with `PUBLIC_` or expose them to browser assets.
 | `GOOGLE_WEB_CLIENT_ID` | Dedicated Google Web OAuth client ID |
 | `GOOGLE_WEB_CLIENT_SECRET` | Dedicated Google Web OAuth client secret |
 | `APPLE_WEB_SERVICES_ID` | Apple Services ID associated with the existing primary App ID |
-| `APPLE_WEB_CLIENT_SECRET` | Signed Apple client-secret JWT; rotate before its expiry and at least every six months |
+| `APPLE_TEAM_ID` | Apple Developer Team ID used as the client-secret issuer |
+| `APPLE_WEB_KEY_ID` | Key ID for the Sign in with Apple private key |
+| `APPLE_WEB_PRIVATE_KEY` | Complete PKCS#8 `.p8` contents, including header/footer and line breaks |
 | `SURVEY_WEB_BACKEND_SECRET` | Independent 256-bit+ broker secret, identical to Supabase `SURVEY_WEB_BACKEND_SECRET` |
 | `SURVEY_HANDOFF_EXCHANGE_FUNCTION` | Optional; default `survey-handoff-exchange` |
 | `SURVEY_PROVIDER_SESSION_CREATE_FUNCTION` | Optional; default `survey-provider-session-create` |
 | `SURVEY_DEFINITION_FUNCTION` | Optional; default `survey-read` |
 | `SURVEY_SUBMIT_FUNCTION` | Optional; default `survey-submit` |
 
-Provider and broker secrets are server-only Vercel variables. Never put them
+Provider private keys and broker secrets are server-only Vercel variables. Never put them
 in `vercel.json`, browser assets, Preview comments, or source control.
 
 ## Recipient-facing deployment protection boundary
@@ -174,11 +176,15 @@ that results are aggregated.
    on both the dedicated Google Web client and Apple Services ID. Do not allow
    arbitrary production paths or hosts.
 2. Associate the Apple Services ID with the same primary App ID used by the
-   native PlayNavi identity. Generate and securely set its client-secret JWT.
+   native PlayNavi identity. Store the Team ID, Key ID, and complete Sign in
+   with Apple `.p8` private key only as sensitive server-side variables. The
+   Web Function generates a five-minute client-secret JWT immediately before
+   each Apple token exchange; never store a pre-generated client-secret JWT.
 3. Provision a new 256-bit broker secret in both Vercel and Supabase. It must
    not be the Supabase service-role key. Rotate it independently.
-4. Add a recurring Apple client-secret rotation reminder before its configured
-   expiry (at least every six months).
+4. Rotate the Apple private key only after compromise, revocation, or an
+   intentional Apple account/key change. Replace the Vercel key before revoking
+   the old Apple key so login does not lose its only valid signer.
 5. Do not enable analytics, session replay, Sentry request-body capture, or
    Vercel request-body logging on survey routes.
 
@@ -238,7 +244,7 @@ definition. Do not delete responses or revoke unrelated user sessions.
 
 Do not deploy or advertise the common URL until all of these are true:
 
-- Google/Apple production callbacks, server secrets, and Apple secret-rotation
+- Google/Apple production callbacks, server secrets, and Apple private-key
   ownership are configured and independently reviewed.
 - The Supabase provider-session function enforces the broker secret with a
   constant-time comparison and exact `(provider, provider_id)` lookup only.

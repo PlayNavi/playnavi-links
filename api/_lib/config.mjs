@@ -55,9 +55,23 @@ export function getProviderConfig(provider) {
     };
   }
   if (provider === "apple") {
+    const teamId = required("APPLE_TEAM_ID");
+    const keyId = required("APPLE_WEB_KEY_ID");
+    const privateKey = required("APPLE_WEB_PRIVATE_KEY").replace(/\r\n/g, "\n");
+    if (!/^[A-Z0-9]{10}$/.test(teamId)) {
+      throw new Error("APPLE_TEAM_ID must be a 10-character Apple Team ID");
+    }
+    if (!/^[A-Z0-9]{10}$/.test(keyId)) {
+      throw new Error("APPLE_WEB_KEY_ID must be a 10-character Apple Key ID");
+    }
+    if (!/^-----BEGIN PRIVATE KEY-----\n[\s\S]+\n-----END PRIVATE KEY-----$/.test(privateKey)) {
+      throw new Error("APPLE_WEB_PRIVATE_KEY must be an Apple PKCS#8 .p8 private key");
+    }
     return {
       clientId: required("APPLE_WEB_SERVICES_ID"),
-      clientSecret: required("APPLE_WEB_CLIENT_SECRET"),
+      teamId,
+      keyId,
+      privateKey,
     };
   }
   throw new Error("Unsupported provider");

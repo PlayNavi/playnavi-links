@@ -1,9 +1,14 @@
 import assert from "node:assert/strict";
+import { generateKeyPairSync } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
+import { importSPKI, jwtVerify } from "jose";
+
 import {
+  createAppleClientSecret,
   createAuthorization,
+  exchangeProviderCode,
   readOAuthState,
   setOAuthState,
 } from "../api/_lib/auth.mjs";
@@ -101,12 +106,101 @@ test("Apple uses only documented authorization parameters", () => {
   assert.equal(redirect.searchParams.get("code_challenge"), null);
 });
 
+test("Apple client secrets are generated just in time from the long-lived private key", async () => {
+  const { privateKey, publicKey } = generateKeyPairSync("ec", { namedCurve: "P-256" });
+  const providerConfig = {
+    clientId: "com.playnavilab.playnavi.survey.stg",
+    teamId: "9GSX6744M2",
+    keyId: "A1B2C3D4E5",
+    privateKey: privateKey.export({ format: "pem", type: "pkcs8" }).toString(),
+  };
+  const issuedAt = 1_800_000_000;
+  const clientSecret = await createAppleClientSecret(providerConfig, issuedAt);
+  const verificationKey = await importSPKI(
+    publicKey.export({ format: "pem", type: "spki" }).toString(),
+    "ES256",
+  );
+  const { payload, protectedHeader } = await jwtVerify(clientSecret, verificationKey, {
+    algorithms: ["ES256"],
+    audience: "https://appleid.apple.com",
+    issuer: providerConfig.teamId,
+    subject: providerConfig.clientId,
+  });
+
+  assert.deepEqual(protectedHeader, { alg: "ES256", kid: providerConfig.keyId });
+  assert.equal(payload.iat, issuedAt);
+  assert.equal(payload.exp, issuedAt + 300);
+});
+
+test("Apple token exchange sends a newly signed five-minute client secret", async () => {
+  const { privateKey, publicKey } = generateKeyPairSync("ec", { namedCurve: "P-256" });
+  const providerConfig = {
+    clientId: "com.playnavilab.playnavi.survey.stg",
+    teamId: "9GSX6744M2",
+    keyId: "A1B2C3D4E5",
+    privateKey: privateKey.export({ format: "pem", type: "pkcs8" }).toString(),
+  };
+  const verificationKey = await importSPKI(
+    publicKey.export({ format: "pem", type: "spki" }).toString(),
+    "ES256",
+  );
+  const originalFetch = globalThis.fetch;
+  let request;
+  globalThis.fetch = async (url, options) => {
+    request = { url, options };
+    return { ok: true, json: async () => ({ id_token: "apple-id-token" }) };
+  };
+
+  try {
+    const before = Math.floor(Date.now() / 1_000);
+    const idToken = await exchangeProviderCode(
+      "apple",
+      providerConfig,
+      "https://survey-stg.playnavilab.com/api/auth/callback",
+      "authorization-code",
+      {},
+    );
+    const after = Math.floor(Date.now() / 1_000);
+    assert.equal(idToken, "apple-id-token");
+    assert.equal(request.url, "https://appleid.apple.com/auth/token");
+    assert.equal(request.options.method, "POST");
+    const form = new URLSearchParams(request.options.body);
+    assert.equal(form.get("client_id"), providerConfig.clientId);
+    assert.equal(form.get("redirect_uri"), "https://survey-stg.playnavilab.com/api/auth/callback");
+    assert.equal(form.get("grant_type"), "authorization_code");
+    assert.equal(form.get("code"), "authorization-code");
+    const { payload, protectedHeader } = await jwtVerify(
+      form.get("client_secret"),
+      verificationKey,
+      {
+        algorithms: ["ES256"],
+        audience: "https://appleid.apple.com",
+        issuer: providerConfig.teamId,
+        subject: providerConfig.clientId,
+      },
+    );
+    assert.deepEqual(protectedHeader, { alg: "ES256", kid: providerConfig.keyId });
+    assert.ok(payload.iat >= before && payload.iat <= after);
+    assert.equal(payload.exp - payload.iat, 300);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("OAuth implementation has no Supabase signup or persisted provider session", async () => {
   const source = await readFile(new URL("../api/_lib/auth.mjs", import.meta.url), "utf8");
   assert.doesNotMatch(source, /supabase-js|signInWithOAuth|exchangeCodeForSession|getUser/);
   assert.match(source, /jwtVerify/);
   assert.match(source, /payload\.nonce !== nonce/);
   assert.doesNotMatch(source, /serializeCookie\([^)]*(?:idToken|access|refresh)/s);
+});
+
+test("Apple configuration never accepts a manually rotated fixed client secret", async () => {
+  const source = await readFile(new URL("../api/_lib/config.mjs", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /APPLE_WEB_CLIENT_SECRET/);
+  assert.match(source, /APPLE_WEB_PRIVATE_KEY/);
+  assert.match(source, /APPLE_WEB_KEY_ID/);
+  assert.match(source, /APPLE_TEAM_ID/);
 });
 
 test("provider authorization state differs across parallel starts", () => {

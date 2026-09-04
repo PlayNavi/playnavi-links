@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 
-import { createRemoteJWKSet, jwtVerify } from "jose";
+import { SignJWT, createRemoteJWKSet, importPKCS8, jwtVerify } from "jose";
 
 import { appendSetCookie, parseCookies, serializeCookie } from "./http.mjs";
 
@@ -8,6 +8,7 @@ export const OAUTH_STATE_COOKIE = "__Host-pn_oauth_state";
 const STATE_MAX_AGE_SECONDS = 600;
 const GOOGLE_JWKS = createRemoteJWKSet(new URL("https://www.googleapis.com/oauth2/v3/certs"));
 const APPLE_JWKS = createRemoteJWKSet(new URL("https://appleid.apple.com/auth/keys"));
+const APPLE_CLIENT_SECRET_LIFETIME_SECONDS = 300;
 
 const opaque = () => randomBytes(32).toString("base64url");
 const challenge = (verifier) => createHash("sha256").update(verifier).digest("base64url");
@@ -99,6 +100,18 @@ async function tokenRequest(url, body) {
   return payload.id_token;
 }
 
+export async function createAppleClientSecret(providerConfig, now = Math.floor(Date.now() / 1_000)) {
+  const privateKey = await importPKCS8(providerConfig.privateKey, "ES256");
+  return new SignJWT({})
+    .setProtectedHeader({ alg: "ES256", kid: providerConfig.keyId })
+    .setIssuer(providerConfig.teamId)
+    .setSubject(providerConfig.clientId)
+    .setAudience("https://appleid.apple.com")
+    .setIssuedAt(now)
+    .setExpirationTime(now + APPLE_CLIENT_SECRET_LIFETIME_SECONDS)
+    .sign(privateKey);
+}
+
 export async function exchangeProviderCode(provider, providerConfig, redirectUri, code, state) {
   if (provider === "google") {
     return tokenRequest("https://oauth2.googleapis.com/token", {
@@ -110,9 +123,10 @@ export async function exchangeProviderCode(provider, providerConfig, redirectUri
       code_verifier: state.codeVerifier,
     });
   }
+  const clientSecret = await createAppleClientSecret(providerConfig);
   return tokenRequest("https://appleid.apple.com/auth/token", {
     client_id: providerConfig.clientId,
-    client_secret: providerConfig.clientSecret,
+    client_secret: clientSecret,
     redirect_uri: redirectUri,
     grant_type: "authorization_code",
     code,
