@@ -24,8 +24,9 @@ test("survey login mirrors the App button and warning visual contract", async ()
   assert.match(css, /#survey-title\s*\{[\s\S]*font-size: clamp\(32px, 8vw, 40px\)/);
   assert.match(css, /#survey-title::after\s*\{[\s\S]*background: linear-gradient/);
   assert.match(css, /\.oauth-actions\s*\{[^}]*width: min\(92vw, 420px\);[^}]*gap: 14px/);
-  assert.match(css, /\.oauth\s*\{[^}]*height: 52px;[^}]*border: 2px solid #d6e0e5;[^}]*border-radius: 14px;[^}]*background: #f2f4f6;/);
-  assert.match(css, /\.oauth-icon\s*\{[^}]*width: 30px;[^}]*height: 25px;[^}]*margin-right: 8px/);
+  assert.match(css, /\.oauth\s*\{[^}]*height: 52px;[^}]*grid-template-columns: 30px minmax\(0, 1fr\) 30px;[^}]*border: 2px solid #d6e0e5;[^}]*border-radius: 14px;[^}]*background: #f2f4f6;/);
+  assert.match(css, /\.oauth-icon\s*\{[^}]*grid-column: 1;[^}]*width: 30px;[^}]*height: 25px/);
+  assert.match(css, /\.oauth span\s*\{[^}]*grid-column: 2/);
   assert.match(css, /#survey-description\.auth-warning\s*\{[^}]*color: var\(--warning\);[^}]*font-weight: 700/);
 });
 
