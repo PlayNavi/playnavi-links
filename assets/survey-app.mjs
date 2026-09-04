@@ -2,6 +2,7 @@ import {
   classifySubmitConflict,
   parseSubmitResult,
   parseSurveyRead,
+  parseSurveyPreview,
   updateOrderedSelection,
   validateAnswers,
   validateVoiceAnswers,
@@ -16,6 +17,8 @@ const elements = {
   login: document.getElementById("survey-login"),
   google: document.getElementById("google-login"),
   apple: document.getElementById("apple-login"),
+  guest: document.getElementById("guest-login"),
+  guide: document.getElementById("survey-guide"),
   form: document.getElementById("survey-form"),
   questions: document.getElementById("survey-questions"),
   step: document.getElementById("survey-step"),
@@ -57,15 +60,19 @@ function hideStates() {
   }
 }
 
-function showLogin(slug, failed = false) {
+function showLogin(slug, preview, failed = false) {
   hideStates();
   setPage({
-    title: "PlayNaviアンケート",
+    title: preview?.title || "アンケート",
     description: failed
       ? "ログインを完了できませんでした。PlayNaviで利用しているアカウントでもう一度お試しください。"
       : "",
     descriptionTone: failed ? "warning" : "default",
   });
+  if (elements.guide) {
+    elements.guide.textContent = preview?.description || "";
+    setVisible(elements.guide, Boolean(preview?.description));
+  }
   const returnTo = `/surveys/${slug}`;
   if (elements.google) {
     elements.google.href = `/api/auth/start?provider=google&returnTo=${encodeURIComponent(returnTo)}`;
@@ -73,7 +80,30 @@ function showLogin(slug, failed = false) {
   if (elements.apple) {
     elements.apple.href = `/api/auth/start?provider=apple&returnTo=${encodeURIComponent(returnTo)}`;
   }
+  if (elements.guest) {
+    elements.guest.onclick = () => createGuestSession(slug, elements.guest);
+  }
   setVisible(elements.login, true);
+}
+
+async function createGuestSession(slug, button) {
+  button.disabled = true;
+  try {
+    const response = await fetch("/api/survey/session/guest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      credentials: "same-origin",
+      cache: "no-store",
+      referrerPolicy: "no-referrer",
+      body: JSON.stringify({ survey_slug: slug }),
+    });
+    if (!response.ok) throw new Error("guest session failed");
+    return loadSurvey(slug);
+  } catch {
+    return showUnavailable(() => loadSurvey(slug));
+  } finally {
+    button.disabled = false;
+  }
 }
 
 function showUnavailable(retry, message = "一時的にアンケートを開けません。時間をおいてもう一度お試しください。") {
@@ -837,7 +867,7 @@ async function submitSurvey(slug, survey, values, stepController) {
       referrerPolicy: "no-referrer",
       body: JSON.stringify({ answers: result.answers }),
     });
-    if (response.status === 401) return showLogin(slug);
+    if (response.status === 401) return loadSurvey(slug);
     const payload = await response.json();
     if (response.status === 409) {
       return showSubmitConflict(payload);
@@ -877,7 +907,7 @@ async function submitVoiceSurvey(slug, survey, values, controller) {
       referrerPolicy: "no-referrer",
       body: JSON.stringify({ answers: result.answers }),
     });
-    if (response.status === 401) return showLogin(slug);
+    if (response.status === 401) return loadSurvey(slug);
     const payload = await response.json();
     if (response.status === 409) {
       return showSubmitConflict(payload);
@@ -928,9 +958,12 @@ async function loadSurvey(slug, authFailed = false) {
       cache: "no-store",
       referrerPolicy: "no-referrer",
     });
-    if (response.status === 401) return showLogin(slug, authFailed);
+    if (response.status === 401) {
+      const preview = parseSurveyPreview(await response.json(), slug);
+      return showLogin(slug, preview, authFailed);
+    }
     if (response.status === 403) {
-      return showLogin(slug, true);
+      return showLogin(slug, null, true);
     }
     if (response.status === 404 || response.status === 410) {
       return showResult({ status: "closed" });
@@ -987,7 +1020,7 @@ export async function startSurvey(slug) {
     setPage({ title: "PlayNaviアンケート", description: "ログイン情報を確認しています。", loading: true });
     const exchanged = await exchangeHandoff(handoff, slug);
     if (exchanged === null) return;
-    if (!exchanged) return showLogin(slug, true);
+    if (!exchanged) return loadSurvey(slug, true);
   }
   return loadSurvey(slug, authFailed);
 }

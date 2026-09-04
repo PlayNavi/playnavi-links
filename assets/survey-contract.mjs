@@ -199,6 +199,23 @@ export function parseSurveyRead(payload, expectedSlug) {
   };
 }
 
+export function parseSurveyPreview(payload, expectedSlug) {
+  if (!payload || typeof payload !== "object" || payload.status !== "ok") {
+    throw new SurveyContractError("invalid preview status");
+  }
+  const survey = payload.survey;
+  const title = survey?.slug === expectedSlug ? text(survey.title, 120) : null;
+  if (!title || !hasOnlyKeys(survey, ["slug", "title", "description"])) {
+    throw new SurveyContractError("invalid survey preview");
+  }
+  return {
+    title,
+    description: typeof survey.description === "string"
+      ? survey.description.slice(0, 2_000)
+      : "",
+  };
+}
+
 const optionHas = (options, value) => options.some((option) => option.id === value);
 const objectValue = (value) => value && typeof value === "object" && !Array.isArray(value) ? value : {};
 const exactKeys = (value, allowed) => Object.keys(value).every((key) => allowed.includes(key));

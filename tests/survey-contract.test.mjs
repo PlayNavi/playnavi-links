@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   SurveyContractError,
   parseSubmitResult,
+  parseSurveyPreview,
   parseSurveyRead,
   validateAnswers,
 } from "../assets/survey-contract.mjs";
@@ -25,6 +26,24 @@ const surveyPayload = {
   },
   response: null,
 };
+
+test("parses only the public title and optional guide", () => {
+  assert.deepEqual(parseSurveyPreview({
+    status: "ok",
+    survey: {
+      slug: "launch-2026",
+      title: "ユーザーアンケート",
+      description: "回答時間は約5分です。",
+    },
+  }, "launch-2026"), {
+    title: "ユーザーアンケート",
+    description: "回答時間は約5分です。",
+  });
+  assert.throws(() => parseSurveyPreview({
+    status: "ok",
+    survey: { slug: "launch-2026", title: "x", questions: [] },
+  }, "launch-2026"), SurveyContractError);
+});
 
 test("parses the fixed survey-read contract", () => {
   const survey = parseSurveyRead(surveyPayload, "launch-2026");
