@@ -1,8 +1,33 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const readJson = async (path) => JSON.parse(await readFile(new URL(path, import.meta.url), "utf8"));
+const sha256 = async (path) => createHash("sha256")
+  .update(await readFile(new URL(path, import.meta.url)))
+  .digest("hex");
+
+test("survey login reuses the reviewed App provider marks byte-for-byte", async () => {
+  assert.equal(
+    await sha256("../assets/icons/apple-official.png"),
+    "9cb093ebe058d7f686178d73557847c509534793ce42f7092f4a7cf9d7b5eea2",
+  );
+  assert.equal(
+    await sha256("../assets/icons/google-signin-light.png"),
+    "5340caf2ee16575d86efef251f34cfa86475f99a9c883b6e991fbe4e0b75e553",
+  );
+});
+
+test("survey login mirrors the App button and warning visual contract", async () => {
+  const css = await readFile(new URL("../assets/site.css", import.meta.url), "utf8");
+  assert.match(css, /#survey-title\s*\{[\s\S]*font-size: clamp\(32px, 8vw, 40px\)/);
+  assert.match(css, /#survey-title::after\s*\{[\s\S]*background: linear-gradient/);
+  assert.match(css, /\.oauth-actions\s*\{[^}]*width: min\(92vw, 420px\);[^}]*gap: 28px/);
+  assert.match(css, /\.oauth\s*\{[^}]*height: 52px;[^}]*border: 2px solid #e0e0e0;[^}]*border-radius: 14px;[^}]*background: #fff;/);
+  assert.match(css, /\.oauth-icon\s*\{[^}]*width: 30px;[^}]*height: 30px;[^}]*margin-right: 8px/);
+  assert.match(css, /#survey-description\.auth-warning\s*\{[^}]*color: var\(--warning\);[^}]*font-weight: 700/);
+});
 
 test("Android association uses the reviewed Play App Signing certificate", async () => {
   const assetLinks = await readJson("../.well-known/assetlinks.json");
@@ -112,6 +137,7 @@ test("user copy avoids version labels and store navigation remains explicit", as
 
 test("survey code loads only on survey routes and login copy matches stored-data behavior", async () => {
   const app = await readFile(new URL("../assets/app.mjs", import.meta.url), "utf8");
+  const surveyApp = await readFile(new URL("../assets/survey-app.mjs", import.meta.url), "utf8");
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
 
   assert.doesNotMatch(app, /import\s*\{\s*startSurvey\s*\}\s*from/);
@@ -130,9 +156,19 @@ test("survey code loads only on survey routes and login copy matches stored-data
     html,
     /回答内容は他のユーザーには公開されず、個人が分からない形で集計・利用します。/,
   );
-  assert.match(
-    html,
-    /報酬付与と重複回答防止のため、保存時はPlayNaviアカウントに紐づきます。/,
-  );
+  const loginNotice = html.match(/<ul class="login-notice">([\s\S]*?)<\/ul>/)?.[1] || "";
+  const noticeItems = [...loginNotice.matchAll(/<li>(.*?)<\/li>/g)].map((match) => match[1].trim());
+  assert.deepEqual(noticeItems, [
+    "アカウントに紐づく報酬をご提供するため、ログインをお願いします。",
+    "回答内容は他のユーザーには公開されず、個人が分からない形で集計・利用します。",
+  ]);
+  assert.match(html, /<img class="oauth-icon google-icon" src="\/assets\/icons\/google-signin-light\.png" alt="" aria-hidden="true">/);
+  assert.match(html, /<img class="oauth-icon apple-icon" src="\/assets\/icons\/apple-official\.png" alt="" aria-hidden="true">/);
+  assert.ok(html.indexOf('id="apple-login"') < html.indexOf('id="google-login"'));
+  assert.match(surveyApp, /descriptionTone: failed \? "warning" : "default"/);
+  assert.match(surveyApp, /classList\.toggle\("auth-warning", descriptionTone === "warning"\)/);
+  assert.match(surveyApp, /setAttribute\("role", "alert"\)/);
+  assert.match(surveyApp, /removeAttribute\("role"\)/);
+  assert.doesNotMatch(html, /PlayNaviの登録時と同じログイン方法/);
   assert.doesNotMatch(html, /アンケート内容は匿名での回答になります。/);
 });

@@ -40,9 +40,14 @@ const draftKey = (slug) => `pn_survey_draft:${slug}`;
 const QUESTIONS_PER_STEP = 4;
 const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches === true;
 
-function setPage({ title, description, loading = false }) {
+function setPage({ title, description, loading = false, descriptionTone = "default" }) {
   if (elements.title) elements.title.textContent = title;
-  if (elements.description) elements.description.textContent = description;
+  if (elements.description) {
+    elements.description.textContent = description;
+    elements.description.classList.toggle("auth-warning", descriptionTone === "warning");
+    if (descriptionTone === "warning") elements.description.setAttribute("role", "alert");
+    else elements.description.removeAttribute("role");
+  }
   setVisible(elements.loading, loading);
 }
 
@@ -58,7 +63,8 @@ function showLogin(slug, failed = false) {
     title: "PlayNaviアンケート",
     description: failed
       ? "ログインを完了できませんでした。PlayNaviで利用しているアカウントでもう一度お試しください。"
-      : "PlayNaviで利用しているアカウントでログインしてください。",
+      : "",
+    descriptionTone: failed ? "warning" : "default",
   });
   const returnTo = `/surveys/${slug}`;
   if (elements.google) {
