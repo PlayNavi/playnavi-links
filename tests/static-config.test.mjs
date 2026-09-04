@@ -31,6 +31,8 @@ test("production-only legacy routes stay ahead of safe fallbacks and the SPA", a
     "/api/share-links/:code",
     "/api/share-links/:code",
     "/api/share-links/:code",
+    "/api/surveys/:surveySlug/responses",
+    "/api/surveys/:surveySlug",
     "/s/:code",
     "/surveys/:surveySlug",
     "/(.*)",
@@ -48,6 +50,26 @@ test("production-only legacy routes stay ahead of safe fallbacks and the SPA", a
     assert.equal(routes[2].destination, "/api/legacy-route-disabled");
     assert.equal(routes[2].has, undefined);
   }
+});
+
+test("dynamic survey API routes are explicitly mapped before the SPA fallback", async () => {
+  const config = JSON.parse(await readFile(new URL("../vercel.json", import.meta.url), "utf8"));
+  const routes = config.rewrites;
+  const responseRoute = routes.findIndex(
+    (entry) => entry.source === "/api/surveys/:surveySlug/responses",
+  );
+  const readRoute = routes.findIndex(
+    (entry) => entry.source === "/api/surveys/:surveySlug",
+  );
+  const spaRoute = routes.findIndex((entry) => entry.source === "/(.*)");
+
+  assert.ok(responseRoute >= 0);
+  assert.ok(readRoute >= 0);
+  assert.ok(spaRoute >= 0);
+  assert.equal(routes[responseRoute].destination, "/api/surveys/[surveySlug]/responses");
+  assert.equal(routes[readRoute].destination, "/api/surveys/[surveySlug]");
+  assert.ok(responseRoute < readRoute);
+  assert.ok(readRoute < spaRoute);
 });
 
 test("survey pages receive strict privacy and script policies", async () => {

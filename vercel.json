@@ -94,6 +94,14 @@
       "destination": "/api/legacy-route-disabled"
     },
     {
+      "source": "/api/surveys/:surveySlug/responses",
+      "destination": "/api/surveys/[surveySlug]/responses"
+    },
+    {
+      "source": "/api/surveys/:surveySlug",
+      "destination": "/api/surveys/[surveySlug]"
+    },
+    {
       "source": "/s/:code",
       "destination": "/index.html"
     },
