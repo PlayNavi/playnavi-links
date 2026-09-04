@@ -239,7 +239,10 @@ test("survey uses a bounded mobile wizard and keeps handoff ahead of login", asy
   assert.match(source, /const QUESTIONS_PER_STEP = 4/);
   assert.match(source, /createStepController/);
   assert.match(source, /sessionStorage/);
-  assert.ok(source.indexOf("await exchangeHandoff") < source.indexOf("return loadSurvey"));
+  const start = source.slice(source.indexOf("export async function startSurvey"));
+  assert.ok(start.indexOf("await exchangeHandoff") < start.indexOf("return loadSurvey"));
+  assert.match(source, /\/api\/survey\/session\/guest/);
+  assert.match(source, /parseSurveyPreview/);
 });
 
 test("server code never logs sensitive request material or stores Supabase sessions", async () => {
@@ -248,6 +251,7 @@ test("server code never logs sensitive request material or stores Supabase sessi
     "../api/_lib/upstream.mjs",
     "../api/auth/callback.mjs",
     "../api/survey/session/exchange.mjs",
+    "../api/survey/session/guest.mjs",
     "../api/surveys/[surveySlug]/responses.mjs",
   ];
   const source = (await Promise.all(files.map((file) => readFile(new URL(file, import.meta.url), "utf8")))).join("\n");

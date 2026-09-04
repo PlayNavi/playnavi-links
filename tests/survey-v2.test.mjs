@@ -265,7 +265,8 @@ test("v2 UI preserves auth transport while providing dynamic low-burden pages", 
   );
   assert.doesNotMatch(v1ConflictBranch, /clearDraft|showResult/);
   assert.match(v1ConflictBranch, /showSubmitConflict/);
-  assert.ok(source.indexOf("await exchangeHandoff") < source.indexOf("return loadSurvey"));
+  const start = source.slice(source.indexOf("export async function startSurvey"));
+  assert.ok(start.indexOf("await exchangeHandoff") < start.indexOf("return loadSurvey"));
 });
 
 test("ordered ranks never promote a lower choice and clear dependent choices", () => {

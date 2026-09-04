@@ -1,6 +1,7 @@
 const DEFAULT_FUNCTIONS = {
   handoffExchange: "survey-handoff-exchange",
   providerSessionCreate: "survey-provider-session-create",
+  guestSessionCreate: "survey-guest-session-create",
   definition: "survey-read",
   submit: "survey-submit",
 };
@@ -41,6 +42,8 @@ export function getConfig() {
         process.env.SURVEY_HANDOFF_EXCHANGE_FUNCTION || DEFAULT_FUNCTIONS.handoffExchange,
       providerSessionCreate:
         process.env.SURVEY_PROVIDER_SESSION_CREATE_FUNCTION || DEFAULT_FUNCTIONS.providerSessionCreate,
+      guestSessionCreate:
+        process.env.SURVEY_GUEST_SESSION_CREATE_FUNCTION || DEFAULT_FUNCTIONS.guestSessionCreate,
       definition: process.env.SURVEY_DEFINITION_FUNCTION || DEFAULT_FUNCTIONS.definition,
       submit: process.env.SURVEY_SUBMIT_FUNCTION || DEFAULT_FUNCTIONS.submit,
     },

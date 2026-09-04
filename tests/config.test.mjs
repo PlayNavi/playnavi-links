@@ -43,6 +43,7 @@ function withAppleEnvironment(values, callback) {
 test("accepts only a PlayNavi-controlled Web origin", () => {
   withConfigEnvironment("https://survey-stg.playnavilab.com", () => {
     assert.equal(getConfig().webOrigin, "https://survey-stg.playnavilab.com");
+    assert.equal(getConfig().functions.guestSessionCreate, "survey-guest-session-create");
   });
 
   for (const unmanagedOrigin of [
