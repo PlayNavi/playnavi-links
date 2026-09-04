@@ -21,20 +21,33 @@ test("AASA includes short links without removing canonical routes", async () => 
   ]);
 });
 
-test("specific proxy and Steam routes stay ahead of the static catch-all", async () => {
+test("production-only legacy routes stay ahead of safe fallbacks and the SPA", async () => {
   const config = await readJson("../vercel.json");
   const sources = config.rewrites.map(({ source }) => source);
   assert.deepEqual(sources, [
     "/auth/steam/callback",
+    "/auth/steam/callback",
+    "/auth/steam/callback",
+    "/api/share-links/:code",
+    "/api/share-links/:code",
     "/api/share-links/:code",
     "/s/:code",
     "/surveys/:surveySlug",
     "/(.*)",
   ]);
-  assert.equal(
-    config.rewrites[1].destination,
-    "https://irbtguncoatqfikctreq.supabase.co/functions/v1/short-links-resolve?code=:code",
-  );
+
+  const productionHosts = ["links.playnavilab.com", "playnavi-links.vercel.app"];
+  for (const source of ["/auth/steam/callback", "/api/share-links/:code"]) {
+    const routes = config.rewrites.filter((route) => route.source === source);
+    assert.deepEqual(
+      routes.slice(0, 2).map((route) => route.has),
+      productionHosts.map((host) => [{ type: "host", value: host }]),
+    );
+    assert.match(routes[0].destination, /^https:\/\/irbtguncoatqfikctreq\.supabase\.co\//);
+    assert.equal(routes[1].destination, routes[0].destination);
+    assert.equal(routes[2].destination, "/api/legacy-route-disabled");
+    assert.equal(routes[2].has, undefined);
+  }
 });
 
 test("survey pages receive strict privacy and script policies", async () => {

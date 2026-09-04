@@ -13,6 +13,7 @@ import {
   safeReturnPath,
   serializeCookie,
 } from "../api/_lib/http.mjs";
+import legacyRouteDisabled from "../api/legacy-route-disabled.mjs";
 
 function mockResponse() {
   const headers = new Map();
@@ -22,6 +23,24 @@ function mockResponse() {
     headers,
   };
 }
+
+test("non-production hosts cannot reach production legacy backends", () => {
+  const response = mockResponse();
+  response.status = (status) => {
+    response.statusCode = status;
+    return response;
+  };
+  response.json = (payload) => {
+    response.payload = payload;
+    return response;
+  };
+
+  legacyRouteDisabled({}, response);
+
+  assert.equal(response.statusCode, 404);
+  assert.deepEqual(response.payload, { status: "not_found" });
+  assert.equal(response.getHeader("Cache-Control"), "private, no-store, max-age=0");
+});
 
 test("cookie helpers preserve Host-prefix invariants", () => {
   const cookie = serializeCookie("__Host-pn_survey_session", "opaque_token", {
